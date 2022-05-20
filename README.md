@@ -16,3 +16,10 @@ const token = await client.getSignableToken();
 
 const accessToken = client.getAccessToken(address, token, signature);
 ```
+
+## Usage (servier-side)
+
+```js
+const server = new NativeAuthServer();
+const result = await server.validate(accessToken);
+```
