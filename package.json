@@ -1,11 +1,11 @@
 {
   "name": "@elrondnetwork/native-auth",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "description": "Native authentication client-side / server-side",
-  "main": "lib/native.auth.js",
-  "types": "lib/auth.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib/**/*"
   ],
   "scripts": {
     "test": "jest test/*",
