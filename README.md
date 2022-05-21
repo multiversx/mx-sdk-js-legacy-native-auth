@@ -10,11 +10,11 @@ Native Authenticator for JavaScript and TypeScript (written in TypeScript).
 
 ```js
 const client = new NativeAuthClient();
-const token = await client.getSignableToken();
+const init = await client.initialize();
 
 // obtain signature by signing token
 
-const accessToken = client.getAccessToken(address, token, signature);
+const accessToken = client.getAccessToken(address, init, signature);
 ```
 
 ## Usage (servier-side)

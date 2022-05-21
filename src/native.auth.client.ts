@@ -16,7 +16,7 @@ export class NativeAuthClient {
     return accessToken;
   }
 
-  async getSignableToken(): Promise<string> {
+  async initialize(): Promise<string> {
     const blockHash = await this.getCurrentBlockHash();
 
     return `${this.config.host}.${blockHash}.${this.config.expirySeconds}`;

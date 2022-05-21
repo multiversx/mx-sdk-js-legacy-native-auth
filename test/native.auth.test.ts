@@ -1,3 +1,5 @@
+import { parseUserKey, UserSigner, UserWallet } from "@elrondnetwork/erdjs-walletcore/out";
+import { Address, SignableMessage } from "@elrondnetwork/erdjs/out";
 import axios from "axios";
 import MockAdapter, { RequestHandler } from "axios-mock-adapter";
 import { NativeAuthHostNotAcceptedError } from "../src/entities/errors/native.auth.host.not.accepted.error";
@@ -6,6 +8,7 @@ import { NativeAuthInvalidSignatureError } from "../src/entities/errors/native.a
 import { NativeAuthTokenExpiredError } from "../src/entities/errors/native.auth.token.expired.error";
 import { NativeAuthClient } from "../src/native.auth.client";
 import { NativeAuthServer } from "../src/native.auth.server";
+import { NativeAuthSignature } from "../src/signature";
 
 describe("Native Auth", () => {
   let mock: MockAdapter;
@@ -17,6 +20,13 @@ describe("Native Auth", () => {
   const TOKEN = `${HOST}.${BLOCK_HASH}.${TTL}`;
   const ACCESS_TOKEN = 'ZXJkMTNycm4zZndqZHM4cjUyNjBuNnEzcGQycWE2d3FrdWRyaGN6aDI2ZDk1N2MwZWR5emVybXNoZHMwazg.bmF0aXZlLWF1dGguYjNkMDc1NjUyOTNmZDU2ODRjOTdkMmI5NmViODYyZDEyNGZkNjk4Njc4ZjNmOTViMjUxNWVkMDcxNzhhMjdiNC44NjQwMA.50d853f2bb3c871981855764b109eec8549bd6251aebd78b042ed5c1861882a500a77440a381ce5e3fd08ad8b52a67e32e7a2df4d140680e45fe1c179d2cc106';
   const BLOCK_TIMESTAMP = 1653068466;
+
+  const PEM_KEY = `-----BEGIN PRIVATE KEY for erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl-----
+  ODY1NmI0ZjMzYTRjOTY0MGI3MTFiY2E4NDUzODNiMDZiNjczMjAzNjk2ZjYxYjMy
+  N2E5MDY3ODdlNWExODg1NjA0ZWNhNjZmODAyMzkyMDViNjc2ZGY3OGMwZWNmZjgz
+  Y2Q3N2JlYzczNjc4MWU3NTNhYzZmNTg2ZDQ2NjM5NDA=
+  -----END PRIVATE KEY for erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl-----`;
+  const PEM_ADDRESS = 'erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl';
 
   const onLatestBlockHashGet = function (mock: MockAdapter): RequestHandler {
     return mock.onGet('https://api.elrond.com/blocks?size=1&fields=hash');
@@ -46,7 +56,7 @@ describe("Native Auth", () => {
 
       onLatestBlockHashGet(mock).reply(200, [{ hash: BLOCK_HASH }]);
 
-      const token = await client.getSignableToken();
+      const token = await client.initialize();
 
       expect(token).toStrictEqual(`${HOST}.${BLOCK_HASH}.${TTL}`);
     });
@@ -56,7 +66,7 @@ describe("Native Auth", () => {
 
       onLatestBlockHashGet(mock).reply(500);
 
-      await expect(client.getSignableToken()).rejects.toThrow();
+      await expect(client.initialize()).rejects.toThrow();
     });
 
     it('Generate Access token', () => {
@@ -163,6 +173,41 @@ describe("Native Auth", () => {
       onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
 
       await expect(server.validate(ACCESS_TOKEN + 'abbbbbbbbb')).rejects.toThrow(NativeAuthInvalidSignatureError);
+    });
+  });
+
+  describe('Client & Server', () => {
+    it('End-to-end with internal pem', async () => {
+      const client = new NativeAuthClient();
+
+      onLatestBlockHashGet(mock).reply(200, [{ hash: BLOCK_HASH }]);
+
+      const pem = UserSigner.fromPem(PEM_KEY);
+
+      const signableToken = await client.initialize();
+
+      const messageToSign = `${PEM_ADDRESS}${signableToken}{}`;
+      const signableMessage = new SignableMessage({
+        message: Buffer.from(messageToSign, 'utf8'),
+      });
+      await pem.sign(signableMessage);
+
+      const signature = signableMessage.getSignature();
+
+      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+
+      const server = new NativeAuthServer();
+
+      onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
+      onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
+
+      const result = await server.validate(accessToken);
+
+      expect(result).toStrictEqual({
+        address: PEM_ADDRESS,
+        issued: BLOCK_TIMESTAMP,
+        expires: BLOCK_TIMESTAMP + TTL,
+      });
     });
   });
 });
