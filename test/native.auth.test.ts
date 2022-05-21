@@ -1,5 +1,5 @@
-import { parseUserKey, UserSigner, UserWallet } from "@elrondnetwork/erdjs-walletcore/out";
-import { Address, SignableMessage } from "@elrondnetwork/erdjs/out";
+import { UserSigner } from "@elrondnetwork/erdjs-walletcore/out";
+import { SignableMessage } from "@elrondnetwork/erdjs/out";
 import axios from "axios";
 import MockAdapter, { RequestHandler } from "axios-mock-adapter";
 import { NativeAuthHostNotAcceptedError } from "../src/entities/errors/native.auth.host.not.accepted.error";
@@ -8,7 +8,6 @@ import { NativeAuthInvalidSignatureError } from "../src/entities/errors/native.a
 import { NativeAuthTokenExpiredError } from "../src/entities/errors/native.auth.token.expired.error";
 import { NativeAuthClient } from "../src/native.auth.client";
 import { NativeAuthServer } from "../src/native.auth.server";
-import { NativeAuthSignature } from "../src/signature";
 
 describe("Native Auth", () => {
   let mock: MockAdapter;

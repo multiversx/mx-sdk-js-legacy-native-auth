@@ -1,18 +1,20 @@
+import axios from "axios";
 import { UserPublicKey, UserVerifier } from "@elrondnetwork/erdjs-walletcore/out";
 import { Address, SignableMessage } from "@elrondnetwork/erdjs/out";
-import axios from "axios";
 import { NativeAuthHostNotAcceptedError } from "./entities/errors/native.auth.host.not.accepted.error";
 import { NativeAuthInvalidBlockHashError } from "./entities/errors/native.auth.invalid.block.hash.error";
 import { NativeAuthInvalidSignatureError } from "./entities/errors/native.auth.invalid.signature.error";
 import { NativeAuthTokenExpiredError } from "./entities/errors/native.auth.token.expired.error";
 import { NativeAuthServerConfig } from "./entities/native.auth.server.config";
-import { NativeAuthSignature } from "./signature";
+import { NativeAuthSignature } from "./native.auth.signature";
+import { NativeAuthCacheInterface } from "./native.auth.cache.interface";
 
 export class NativeAuthServer {
   config: NativeAuthServerConfig;
 
   constructor(
-    config?: Partial<NativeAuthServerConfig>
+    config?: Partial<NativeAuthServerConfig>,
+    private readonly cache?: NativeAuthCacheInterface
   ) {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
@@ -66,13 +68,37 @@ export class NativeAuthServer {
   }
 
   private async getCurrentBlockTimestamp(): Promise<number> {
+    if (this.cache) {
+      const timestamp = await this.cache.getValue<number>('block:timestamp:latest');
+      if (timestamp) {
+        return timestamp;
+      }
+    }
+
     const response = await axios.get(`${this.config.apiUrl}/blocks?size=1&fields=timestamp`);
-    return Number(response.data[0].timestamp);
+    const timestamp = Number(response.data[0].timestamp);
+
+    if (this.cache) {
+      await this.cache.setValue('block:timestamp:latest', timestamp, 6);
+    }
+
+    return timestamp;
   }
 
   private async getBlockTimestamp(hash: string): Promise<number | undefined> {
+    if (this.cache) {
+      const timestamp = this.cache.getValue<number>(`block:timestamp:${hash}`);
+      if (timestamp) {
+        return timestamp;
+      }
+    }
+
     try {
       const { data: timestamp } = await axios.get(`${this.config.apiUrl}/blocks/${hash}?extract=timestamp`);
+
+      if (this.cache) {
+        await this.cache.setValue<number>(`block:timestamp:${hash}`, Number(timestamp), this.config.maxExpirySeconds);
+      }
 
       return Number(timestamp);
     } catch (error) {
