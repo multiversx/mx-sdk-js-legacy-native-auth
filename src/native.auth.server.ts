@@ -14,7 +14,6 @@ export class NativeAuthServer {
 
   constructor(
     config?: Partial<NativeAuthServerConfig>,
-    private readonly cache?: NativeAuthCacheInterface
   ) {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
@@ -68,8 +67,8 @@ export class NativeAuthServer {
   }
 
   private async getCurrentBlockTimestamp(): Promise<number> {
-    if (this.cache) {
-      const timestamp = await this.cache.getValue<number>('block:timestamp:latest');
+    if (this.config.cache) {
+      const timestamp = await this.config.cache.getValue<number>('block:timestamp:latest');
       if (timestamp) {
         return timestamp;
       }
@@ -78,16 +77,16 @@ export class NativeAuthServer {
     const response = await axios.get(`${this.config.apiUrl}/blocks?size=1&fields=timestamp`);
     const timestamp = Number(response.data[0].timestamp);
 
-    if (this.cache) {
-      await this.cache.setValue('block:timestamp:latest', timestamp, 6);
+    if (this.config.cache) {
+      await this.config.cache.setValue('block:timestamp:latest', timestamp, 6);
     }
 
     return timestamp;
   }
 
   private async getBlockTimestamp(hash: string): Promise<number | undefined> {
-    if (this.cache) {
-      const timestamp = this.cache.getValue<number>(`block:timestamp:${hash}`);
+    if (this.config.cache) {
+      const timestamp = this.config.cache.getValue<number>(`block:timestamp:${hash}`);
       if (timestamp) {
         return timestamp;
       }
@@ -96,8 +95,8 @@ export class NativeAuthServer {
     try {
       const { data: timestamp } = await axios.get(`${this.config.apiUrl}/blocks/${hash}?extract=timestamp`);
 
-      if (this.cache) {
-        await this.cache.setValue<number>(`block:timestamp:${hash}`, Number(timestamp), this.config.maxExpirySeconds);
+      if (this.config.cache) {
+        await this.config.cache.setValue<number>(`block:timestamp:${hash}`, Number(timestamp), this.config.maxExpirySeconds);
       }
 
       return Number(timestamp);
