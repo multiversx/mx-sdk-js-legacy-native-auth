@@ -8,6 +8,7 @@ import { NativeAuthTokenExpiredError } from "./entities/errors/native.auth.token
 import { NativeAuthServerConfig } from "./entities/native.auth.server.config";
 import { NativeAuthSignature } from "./native.auth.signature";
 import { NativeAuthCacheInterface } from "./native.auth.cache.interface";
+import { NativeAuthResult } from "./entities/native.auth.result";
 
 export class NativeAuthServer {
   config: NativeAuthServerConfig;
@@ -18,7 +19,7 @@ export class NativeAuthServer {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
 
-  async validate(accessToken: string) {
+  async validate(accessToken: string): Promise<NativeAuthResult> {
     const [address, body, signature] = accessToken.split('.');
     const parsedAddress = this.decode(address);
     const parsedBody = this.decode(body);
