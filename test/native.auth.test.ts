@@ -173,6 +173,63 @@ describe("Native Auth", () => {
 
       await expect(server.validate(ACCESS_TOKEN + 'abbbbbbbbb')).rejects.toThrow(NativeAuthInvalidSignatureError);
     });
+
+    it('Cache hit', async () => {
+      const server = new NativeAuthServer();
+
+      server.config.cache = {
+        // eslint-disable-next-line require-await
+        getValue: async function <T>(key: string): Promise<T | undefined> {
+          if (key === `block:timestamp:${BLOCK_HASH}`) {
+            // @ts-ignore
+            return BLOCK_TIMESTAMP;
+          }
+
+          if (key === 'block:timestamp:latest') {
+            // @ts-ignore
+            return BLOCK_TIMESTAMP;
+          }
+
+          throw new Error(`Key '${key}' not mocked`);
+        },
+        setValue: async function <T>(key: string, value: T, ttl: number): Promise<void> {
+
+        },
+      };
+
+      const result = await server.validate(ACCESS_TOKEN);
+
+      expect(result).toStrictEqual({
+        address: ADDRESS,
+        issued: BLOCK_TIMESTAMP,
+        expires: BLOCK_TIMESTAMP + TTL,
+      });
+    });
+
+    it('Cache miss', async () => {
+      const server = new NativeAuthServer();
+
+      server.config.cache = {
+        // eslint-disable-next-line require-await
+        getValue: async function <T>(key: string): Promise<T | undefined> {
+          return undefined;
+        },
+        setValue: async function <T>(key: string, value: T, ttl: number): Promise<void> {
+
+        },
+      };
+
+      onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
+      onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
+
+      const result = await server.validate(ACCESS_TOKEN);
+
+      expect(result).toStrictEqual({
+        address: ADDRESS,
+        issued: BLOCK_TIMESTAMP,
+        expires: BLOCK_TIMESTAMP + TTL,
+      });
+    });
   });
 
   describe('Client & Server', () => {

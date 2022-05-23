@@ -86,7 +86,7 @@ export class NativeAuthServer {
 
   private async getBlockTimestamp(hash: string): Promise<number | undefined> {
     if (this.config.cache) {
-      const timestamp = this.config.cache.getValue<number>(`block:timestamp:${hash}`);
+      const timestamp = await this.config.cache.getValue<number>(`block:timestamp:${hash}`);
       if (timestamp) {
         return timestamp;
       }
