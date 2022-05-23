@@ -25,8 +25,9 @@ export class NativeAuthServer {
     const parsedBody = this.decode(body);
     const [host, hash, ttl, extraInfo] = parsedBody.split('.');
     const parsedExtraInfo = JSON.parse(this.decode(extraInfo));
+    const parsedHost = this.decode(host);
 
-    if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(host)) {
+    if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(parsedHost)) {
       throw new NativeAuthHostNotAcceptedError();
     }
 
@@ -66,7 +67,7 @@ export class NativeAuthServer {
       expires,
       address: parsedAddress,
       extraInfo: parsedExtraInfo,
-      host,
+      host: parsedHost,
     });
 
     // if empty object, delete extraInfo (e30 = encoded '{}')
