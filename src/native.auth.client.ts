@@ -16,10 +16,10 @@ export class NativeAuthClient {
     return accessToken;
   }
 
-  async initialize(): Promise<string> {
+  async initialize(extraInfo: any = {}): Promise<string> {
     const blockHash = await this.getCurrentBlockHash();
 
-    return `${this.config.host}.${blockHash}.${this.config.expirySeconds}`;
+    return `${this.config.host}.${blockHash}.${this.config.expirySeconds}.${JSON.stringify(extraInfo)}`;
   }
 
   private async getCurrentBlockHash(): Promise<string | undefined> {

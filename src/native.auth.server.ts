@@ -23,7 +23,8 @@ export class NativeAuthServer {
     const [address, body, signature] = accessToken.split('.');
     const parsedAddress = this.decode(address);
     const parsedBody = this.decode(body);
-    const [host, hash, ttl] = parsedBody.split('.');
+    const [host, hash, ttl, extraInfo] = parsedBody.split('.');
+    const parsedExtraInfo = JSON.parse(extraInfo);
 
     if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(host)) {
       throw new NativeAuthHostNotAcceptedError();
@@ -60,11 +61,18 @@ export class NativeAuthServer {
       throw new NativeAuthInvalidSignatureError();
     }
 
-    return {
+    const result = new NativeAuthResult({
       issued: blockTimestamp,
-      expires: expires,
+      expires,
       address: parsedAddress,
-    };
+      extraInfo: parsedExtraInfo,
+    });
+
+    if (extraInfo === '{}') {
+      delete result.extraInfo;
+    }
+
+    return result;
   }
 
   private async getCurrentBlockTimestamp(): Promise<number> {

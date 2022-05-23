@@ -6,6 +6,7 @@ import { NativeAuthHostNotAcceptedError } from "../src/entities/errors/native.au
 import { NativeAuthInvalidBlockHashError } from "../src/entities/errors/native.auth.invalid.block.hash.error";
 import { NativeAuthInvalidSignatureError } from "../src/entities/errors/native.auth.invalid.signature.error";
 import { NativeAuthTokenExpiredError } from "../src/entities/errors/native.auth.token.expired.error";
+import { NativeAuthResult } from "../src/entities/native.auth.result";
 import { NativeAuthClient } from "../src/native.auth.client";
 import { NativeAuthServer } from "../src/native.auth.server";
 
@@ -13,11 +14,11 @@ describe("Native Auth", () => {
   let mock: MockAdapter;
   const ADDRESS = 'erd13rrn3fwjds8r5260n6q3pd2qa6wqkudrhczh26d957c0edyzermshds0k8';
   const HOST = 'native-auth';
-  const SIGNATURE = '50d853f2bb3c871981855764b109eec8549bd6251aebd78b042ed5c1861882a500a77440a381ce5e3fd08ad8b52a67e32e7a2df4d140680e45fe1c179d2cc106';
+  const SIGNATURE = '7785b8ab1cbb0bc11bf864fa9d03b6236366a0bc7f7ea2b1168435dcc9790a2fff5dce6cf1cf3bdb93c2aac652052fe1b4cd6da3344defd8bac8d5856bf1650f';
   const BLOCK_HASH = 'b3d07565293fd5684c97d2b96eb862d124fd698678f3f95b2515ed07178a27b4';
   const TTL = 86400;
-  const TOKEN = `${HOST}.${BLOCK_HASH}.${TTL}`;
-  const ACCESS_TOKEN = 'ZXJkMTNycm4zZndqZHM4cjUyNjBuNnEzcGQycWE2d3FrdWRyaGN6aDI2ZDk1N2MwZWR5emVybXNoZHMwazg.bmF0aXZlLWF1dGguYjNkMDc1NjUyOTNmZDU2ODRjOTdkMmI5NmViODYyZDEyNGZkNjk4Njc4ZjNmOTViMjUxNWVkMDcxNzhhMjdiNC44NjQwMA.50d853f2bb3c871981855764b109eec8549bd6251aebd78b042ed5c1861882a500a77440a381ce5e3fd08ad8b52a67e32e7a2df4d140680e45fe1c179d2cc106';
+  const TOKEN = `${HOST}.${BLOCK_HASH}.${TTL}.{}`;
+  const ACCESS_TOKEN = 'ZXJkMTNycm4zZndqZHM4cjUyNjBuNnEzcGQycWE2d3FrdWRyaGN6aDI2ZDk1N2MwZWR5emVybXNoZHMwazg.bmF0aXZlLWF1dGguYjNkMDc1NjUyOTNmZDU2ODRjOTdkMmI5NmViODYyZDEyNGZkNjk4Njc4ZjNmOTViMjUxNWVkMDcxNzhhMjdiNC44NjQwMC57fQ.7785b8ab1cbb0bc11bf864fa9d03b6236366a0bc7f7ea2b1168435dcc9790a2fff5dce6cf1cf3bdb93c2aac652052fe1b4cd6da3344defd8bac8d5856bf1650f';
   const BLOCK_TIMESTAMP = 1653068466;
 
   const PEM_KEY = `-----BEGIN PRIVATE KEY for erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl-----
@@ -57,7 +58,7 @@ describe("Native Auth", () => {
 
       const token = await client.initialize();
 
-      expect(token).toStrictEqual(`${HOST}.${BLOCK_HASH}.${TTL}`);
+      expect(token).toStrictEqual(TOKEN);
     });
 
     it("Internal server error", async () => {
@@ -82,7 +83,7 @@ describe("Native Auth", () => {
   });
 
   describe('Server', () => {
-    it('Latest block should return signable token', async () => {
+    it('Simple validation for current timestamp', async () => {
       const server = new NativeAuthServer();
 
       onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
@@ -90,14 +91,14 @@ describe("Native Auth", () => {
 
       const result = await server.validate(ACCESS_TOKEN);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
-      });
+      }));
     });
 
-    it('Latest block + ttl should return signable token', async () => {
+    it('Latest possible timestamp validation', async () => {
       const server = new NativeAuthServer();
 
       onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
@@ -105,11 +106,11 @@ describe("Native Auth", () => {
 
       const result = await server.validate(ACCESS_TOKEN);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
-      });
+      }));
     });
 
     it('Host should be accepted', async () => {
@@ -122,11 +123,11 @@ describe("Native Auth", () => {
 
       const result = await server.validate(ACCESS_TOKEN);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
-      });
+      }));
     });
 
     it('Unsupported host should not be accepted', async () => {
@@ -199,11 +200,11 @@ describe("Native Auth", () => {
 
       const result = await server.validate(ACCESS_TOKEN);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
-      });
+      }));
     });
 
     it('Cache miss', async () => {
@@ -224,11 +225,11 @@ describe("Native Auth", () => {
 
       const result = await server.validate(ACCESS_TOKEN);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
-      });
+      }));
     });
   });
 
@@ -259,11 +260,49 @@ describe("Native Auth", () => {
 
       const result = await server.validate(accessToken);
 
-      expect(result).toStrictEqual({
+      expect(result).toStrictEqual(new NativeAuthResult({
         address: PEM_ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+      }));
+    });
+
+    it('End-to-end with internal pem and extra info', async () => {
+      const client = new NativeAuthClient();
+
+      onLatestBlockHashGet(mock).reply(200, [{ hash: BLOCK_HASH }]);
+
+      const pem = UserSigner.fromPem(PEM_KEY);
+
+      const signableToken = await client.initialize({
+        hello: 'world',
       });
+
+      const messageToSign = `${PEM_ADDRESS}${signableToken}{}`;
+      const signableMessage = new SignableMessage({
+        message: Buffer.from(messageToSign, 'utf8'),
+      });
+      await pem.sign(signableMessage);
+
+      const signature = signableMessage.getSignature();
+
+      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+
+      const server = new NativeAuthServer();
+
+      onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
+      onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
+
+      const result = await server.validate(accessToken);
+
+      expect(result).toStrictEqual(new NativeAuthResult({
+        address: PEM_ADDRESS,
+        issued: BLOCK_TIMESTAMP,
+        expires: BLOCK_TIMESTAMP + TTL,
+        extraInfo: {
+          hello: 'world',
+        },
+      }));
     });
   });
 });
