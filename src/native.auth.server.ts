@@ -66,6 +66,7 @@ export class NativeAuthServer {
       expires,
       address: parsedAddress,
       extraInfo: parsedExtraInfo,
+      host,
     });
 
     // if empty object, delete extraInfo (e30 = encoded '{}')

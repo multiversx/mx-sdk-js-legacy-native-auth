@@ -95,6 +95,7 @@ describe("Native Auth", () => {
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
 
@@ -110,6 +111,7 @@ describe("Native Auth", () => {
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
 
@@ -127,6 +129,7 @@ describe("Native Auth", () => {
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
 
@@ -204,6 +207,7 @@ describe("Native Auth", () => {
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
 
@@ -229,13 +233,16 @@ describe("Native Auth", () => {
         address: ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
   });
 
   describe('Client & Server', () => {
     it('End-to-end with internal pem', async () => {
-      const client = new NativeAuthClient();
+      const client = new NativeAuthClient({
+        host: HOST,
+      });
 
       onLatestBlockHashGet(mock).reply(200, [{ hash: BLOCK_HASH }]);
 
@@ -264,11 +271,14 @@ describe("Native Auth", () => {
         address: PEM_ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
       }));
     });
 
     it('End-to-end with internal pem and extra info', async () => {
-      const client = new NativeAuthClient();
+      const client = new NativeAuthClient({
+        host: HOST,
+      });
 
       onLatestBlockHashGet(mock).reply(200, [{ hash: BLOCK_HASH }]);
 
@@ -299,6 +309,7 @@ describe("Native Auth", () => {
         address: PEM_ADDRESS,
         issued: BLOCK_TIMESTAMP,
         expires: BLOCK_TIMESTAMP + TTL,
+        host: HOST,
         extraInfo: {
           hello: 'world',
         },
