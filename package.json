@@ -1,6 +1,6 @@
 {
   "name": "@elrondnetwork/native-auth",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "Native authentication client-side / server-side",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
