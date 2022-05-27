@@ -7,8 +7,8 @@ import { NativeAuthInvalidSignatureError } from "./entities/errors/native.auth.i
 import { NativeAuthTokenExpiredError } from "./entities/errors/native.auth.token.expired.error";
 import { NativeAuthServerConfig } from "./entities/native.auth.server.config";
 import { NativeAuthSignature } from "./native.auth.signature";
-import { NativeAuthCacheInterface } from "./native.auth.cache.interface";
-import { NativeAuthResult } from "./entities/native.auth.result";
+import { NativeAuthResult as NativeAuthValidateResult } from "./entities/native.auth.validate.result";
+import { NativeAuthDecoded } from "./entities/native.auth.decoded";
 
 export class NativeAuthServer {
   config: NativeAuthServerConfig;
@@ -19,40 +19,62 @@ export class NativeAuthServer {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
 
-  async validate(accessToken: string): Promise<NativeAuthResult> {
+  decode(accessToken: string): NativeAuthDecoded {
     const [address, body, signature] = accessToken.split('.');
-    const parsedAddress = this.decode(address);
-    const parsedBody = this.decode(body);
-    const [host, hash, ttl, extraInfo] = parsedBody.split('.');
-    const parsedExtraInfo = JSON.parse(this.decode(extraInfo));
-    const parsedHost = this.decode(host);
+    const parsedAddress = this.decodeValue(address);
+    const parsedBody = this.decodeValue(body);
+    const [host, blockHash, ttl, extraInfo] = parsedBody.split('.');
+    const parsedExtraInfo = JSON.parse(this.decodeValue(extraInfo));
+    const parsedHost = this.decodeValue(host);
 
-    if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(parsedHost)) {
+    const result = new NativeAuthDecoded({
+      ttl: Number(ttl),
+      address: parsedAddress,
+      extraInfo: parsedExtraInfo,
+      host: parsedHost,
+      signature,
+      blockHash,
+      body: parsedBody,
+    });
+
+    // if empty object, delete extraInfo (e30 = encoded '{}')
+    if (extraInfo === 'e30') {
+      delete result.extraInfo;
+    }
+
+    return result;
+  }
+
+  async validate(accessToken: string): Promise<NativeAuthValidateResult> {
+    const decoded = this.decode(accessToken);
+
+    if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(decoded.host)) {
       throw new NativeAuthHostNotAcceptedError();
     }
 
-    const blockTimestamp = await this.getBlockTimestamp(hash);
+    const blockTimestamp = await this.getBlockTimestamp(decoded.blockHash);
     if (!blockTimestamp) {
       throw new NativeAuthInvalidBlockHashError();
     }
 
     const currentBlockTimestamp = await this.getCurrentBlockTimestamp();
 
-    const expires = blockTimestamp + Number(ttl);
+    const expires = blockTimestamp + decoded.ttl;
+
     const isTokenExpired = expires < currentBlockTimestamp;
     if (isTokenExpired) {
       throw new NativeAuthTokenExpiredError();
     }
 
-    const signedMessage = `${parsedAddress}${parsedBody}{}`;
+    const signedMessage = `${decoded.address}${decoded.body}{}`;
     const signableMessage = new SignableMessage({
-      address: new Address(parsedAddress),
+      address: new Address(decoded.address),
       message: Buffer.from(signedMessage, 'utf8'),
-      signature: new NativeAuthSignature(signature),
+      signature: new NativeAuthSignature(decoded.signature),
     });
 
     const publicKey = new UserPublicKey(
-      Address.fromString(parsedAddress).pubkey(),
+      Address.fromString(decoded.address).pubkey(),
     );
 
     const verifier = new UserVerifier(publicKey);
@@ -62,16 +84,15 @@ export class NativeAuthServer {
       throw new NativeAuthInvalidSignatureError();
     }
 
-    const result = new NativeAuthResult({
+    const result = new NativeAuthValidateResult({
       issued: blockTimestamp,
       expires,
-      address: parsedAddress,
-      extraInfo: parsedExtraInfo,
-      host: parsedHost,
+      address: decoded.address,
+      extraInfo: decoded.extraInfo,
+      host: decoded.host,
     });
 
-    // if empty object, delete extraInfo (e30 = encoded '{}')
-    if (extraInfo === 'e30') {
+    if (!decoded.extraInfo) {
       delete result.extraInfo;
     }
 
@@ -122,7 +143,7 @@ export class NativeAuthServer {
     }
   }
 
-  private decode(str: string) {
+  private decodeValue(str: string) {
     return Buffer.from(str, 'base64').toString('ascii');
   }
 }

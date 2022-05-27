@@ -6,7 +6,8 @@ import { NativeAuthHostNotAcceptedError } from "../src/entities/errors/native.au
 import { NativeAuthInvalidBlockHashError } from "../src/entities/errors/native.auth.invalid.block.hash.error";
 import { NativeAuthInvalidSignatureError } from "../src/entities/errors/native.auth.invalid.signature.error";
 import { NativeAuthTokenExpiredError } from "../src/entities/errors/native.auth.token.expired.error";
-import { NativeAuthResult } from "../src/entities/native.auth.result";
+import { NativeAuthDecoded } from "../src/entities/native.auth.decoded";
+import { NativeAuthResult } from "../src/entities/native.auth.validate.result";
 import { NativeAuthClient } from "../src/native.auth.client";
 import { NativeAuthServer } from "../src/native.auth.server";
 
@@ -72,7 +73,7 @@ describe("Native Auth", () => {
     it('Generate Access token', () => {
       const client = new NativeAuthClient();
 
-      const accessToken = client.getAccessToken(
+      const accessToken = client.getToken(
         ADDRESS,
         TOKEN,
         SIGNATURE
@@ -83,6 +84,24 @@ describe("Native Auth", () => {
   });
 
   describe('Server', () => {
+    it('Simple decode', async () => {
+      const server = new NativeAuthServer();
+
+      onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
+      onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
+
+      const result = await server.decode(ACCESS_TOKEN);
+
+      expect(result).toStrictEqual(new NativeAuthDecoded({
+        address: ADDRESS,
+        ttl: TTL,
+        host: HOST,
+        blockHash: BLOCK_HASH,
+        signature: SIGNATURE,
+        body: TOKEN,
+      }));
+    });
+
     it('Simple validation for current timestamp', async () => {
       const server = new NativeAuthServer();
 
@@ -258,7 +277,7 @@ describe("Native Auth", () => {
 
       const signature = signableMessage.getSignature();
 
-      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+      const accessToken = client.getToken(PEM_ADDRESS, signableToken, signature.hex());
 
       const server = new NativeAuthServer();
 
@@ -296,7 +315,7 @@ describe("Native Auth", () => {
 
       const signature = signableMessage.getSignature();
 
-      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+      const accessToken = client.getToken(PEM_ADDRESS, signableToken, signature.hex());
 
       const server = new NativeAuthServer();
 

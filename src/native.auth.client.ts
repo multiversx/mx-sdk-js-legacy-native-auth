@@ -8,9 +8,9 @@ export class NativeAuthClient {
     this.config = Object.assign(new NativeAuthClientConfig(), config);
   }
 
-  getAccessToken(address: string, token: string, signature: string): string {
-    const encodedAddress = this.encode(address);
-    const encodedToken = this.encode(token);
+  getToken(address: string, token: string, signature: string): string {
+    const encodedAddress = this.encodeValue(address);
+    const encodedToken = this.encodeValue(token);
 
     const accessToken = `${encodedAddress}.${encodedToken}.${signature}`;
     return accessToken;
@@ -18,8 +18,8 @@ export class NativeAuthClient {
 
   async initialize(extraInfo: any = {}): Promise<string> {
     const blockHash = await this.getCurrentBlockHash();
-    const encodedExtraInfo = this.encode(JSON.stringify(extraInfo));
-    const host = this.encode(this.config.host);
+    const encodedExtraInfo = this.encodeValue(JSON.stringify(extraInfo));
+    const host = this.encodeValue(this.config.host);
 
     return `${host}.${blockHash}.${this.config.expirySeconds}.${encodedExtraInfo}`;
   }
@@ -29,7 +29,7 @@ export class NativeAuthClient {
     return response.data[0].hash;
   }
 
-  private encode(str: string) {
+  private encodeValue(str: string) {
     return this.escape(Buffer.from(str, "utf8").toString("base64"));
   }
 

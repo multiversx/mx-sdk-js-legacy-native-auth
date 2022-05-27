@@ -15,7 +15,7 @@ const init = await client.initialize();
 
 // obtain signature by signing token
 
-const accessToken = client.getAccessToken(address, init, signature);
+const accessToken = client.getToken(address, init, signature);
 ```
 
 ### Client-side config
