@@ -94,7 +94,6 @@ describe("Native Auth", () => {
 
       expect(result).toStrictEqual(new NativeAuthDecoded({
         address: ADDRESS,
-        issued: BLOCK_TIMESTAMP,
         ttl: TTL,
         host: HOST,
         blockHash: BLOCK_HASH,

@@ -19,7 +19,7 @@ export class NativeAuthServer {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
 
-  async decode(accessToken: string): Promise<NativeAuthDecoded> {
+  decode(accessToken: string): NativeAuthDecoded {
     const [address, body, signature] = accessToken.split('.');
     const parsedAddress = this.decodeValue(address);
     const parsedBody = this.decodeValue(body);
@@ -27,13 +27,7 @@ export class NativeAuthServer {
     const parsedExtraInfo = JSON.parse(this.decodeValue(extraInfo));
     const parsedHost = this.decodeValue(host);
 
-    const blockTimestamp = await this.getBlockTimestamp(blockHash);
-    if (!blockTimestamp) {
-      throw new NativeAuthInvalidBlockHashError();
-    }
-
     const result = new NativeAuthDecoded({
-      issued: blockTimestamp,
       ttl: Number(ttl),
       address: parsedAddress,
       extraInfo: parsedExtraInfo,
@@ -52,15 +46,20 @@ export class NativeAuthServer {
   }
 
   async validate(accessToken: string): Promise<NativeAuthValidateResult> {
-    const decoded = await this.decode(accessToken);
+    const decoded = this.decode(accessToken);
 
     if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(decoded.host)) {
       throw new NativeAuthHostNotAcceptedError();
     }
 
+    const blockTimestamp = await this.getBlockTimestamp(decoded.blockHash);
+    if (!blockTimestamp) {
+      throw new NativeAuthInvalidBlockHashError();
+    }
+
     const currentBlockTimestamp = await this.getCurrentBlockTimestamp();
 
-    const expires = decoded.issued + decoded.ttl;
+    const expires = blockTimestamp + decoded.ttl;
 
     const isTokenExpired = expires < currentBlockTimestamp;
     if (isTokenExpired) {
@@ -86,7 +85,7 @@ export class NativeAuthServer {
     }
 
     const result = new NativeAuthValidateResult({
-      issued: decoded.issued,
+      issued: blockTimestamp,
       expires,
       address: decoded.address,
       extraInfo: decoded.extraInfo,
