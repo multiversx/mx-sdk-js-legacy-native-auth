@@ -19,13 +19,13 @@ export class NativeAuthServer {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
 
-  async decodeAccessToken(accessToken: string): Promise<NativeAuthDecoded> {
+  async decode(accessToken: string): Promise<NativeAuthDecoded> {
     const [address, body, signature] = accessToken.split('.');
-    const parsedAddress = this.decode(address);
-    const parsedBody = this.decode(body);
+    const parsedAddress = this.decodeValue(address);
+    const parsedBody = this.decodeValue(body);
     const [host, blockHash, ttl, extraInfo] = parsedBody.split('.');
-    const parsedExtraInfo = JSON.parse(this.decode(extraInfo));
-    const parsedHost = this.decode(host);
+    const parsedExtraInfo = JSON.parse(this.decodeValue(extraInfo));
+    const parsedHost = this.decodeValue(host);
 
     const blockTimestamp = await this.getBlockTimestamp(blockHash);
     if (!blockTimestamp) {
@@ -52,7 +52,7 @@ export class NativeAuthServer {
   }
 
   async validate(accessToken: string): Promise<NativeAuthValidateResult> {
-    const decoded = await this.decodeAccessToken(accessToken);
+    const decoded = await this.decode(accessToken);
 
     if (this.config.acceptedHosts.length > 0 && !this.config.acceptedHosts.includes(decoded.host)) {
       throw new NativeAuthHostNotAcceptedError();
@@ -144,7 +144,7 @@ export class NativeAuthServer {
     }
   }
 
-  private decode(str: string) {
+  private decodeValue(str: string) {
     return Buffer.from(str, 'base64').toString('ascii');
   }
 }

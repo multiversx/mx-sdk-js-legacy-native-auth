@@ -73,7 +73,7 @@ describe("Native Auth", () => {
     it('Generate Access token', () => {
       const client = new NativeAuthClient();
 
-      const accessToken = client.getAccessToken(
+      const accessToken = client.getToken(
         ADDRESS,
         TOKEN,
         SIGNATURE
@@ -90,7 +90,7 @@ describe("Native Auth", () => {
       onSpecificBlockTimestampGet(mock).reply(200, BLOCK_TIMESTAMP);
       onLatestBlockTimestampGet(mock).reply(200, [{ timestamp: BLOCK_TIMESTAMP }]);
 
-      const result = await server.decodeAccessToken(ACCESS_TOKEN);
+      const result = await server.decode(ACCESS_TOKEN);
 
       expect(result).toStrictEqual(new NativeAuthDecoded({
         address: ADDRESS,
@@ -278,7 +278,7 @@ describe("Native Auth", () => {
 
       const signature = signableMessage.getSignature();
 
-      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+      const accessToken = client.getToken(PEM_ADDRESS, signableToken, signature.hex());
 
       const server = new NativeAuthServer();
 
@@ -316,7 +316,7 @@ describe("Native Auth", () => {
 
       const signature = signableMessage.getSignature();
 
-      const accessToken = client.getAccessToken(PEM_ADDRESS, signableToken, signature.hex());
+      const accessToken = client.getToken(PEM_ADDRESS, signableToken, signature.hex());
 
       const server = new NativeAuthServer();
 
