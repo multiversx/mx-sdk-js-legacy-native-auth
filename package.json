@@ -1,6 +1,6 @@
 {
   "name": "@elrondnetwork/native-auth",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Native authentication client-side / server-side",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -40,7 +40,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@elrondnetwork/erdjs": "^10.2.5",
+    "@elrondnetwork/erdjs": "^10.2.7",
     "@elrondnetwork/erdjs-walletcore": "^1.0.0",
     "axios": "^0.27.2",
     "bech32": "^2.0.0"
