@@ -1,5 +1,6 @@
-import { UserSigner } from "@elrondnetwork/erdjs-walletcore/out";
-import { SignableMessage } from "@elrondnetwork/erdjs/out";
+
+import { UserSigner } from "@multiversx/erdjs-walletcore";
+import { SignableMessage } from "@multiversx/erdjs";
 import axios from "axios";
 import MockAdapter, { RequestHandler } from "axios-mock-adapter";
 import { NativeAuthHostNotAcceptedError } from "../src/entities/errors/native.auth.host.not.accepted.error";
@@ -13,32 +14,45 @@ import { NativeAuthServer } from "../src/native.auth.server";
 
 describe("Native Auth", () => {
   let mock: MockAdapter;
-  const ADDRESS = 'erd13rrn3fwjds8r5260n6q3pd2qa6wqkudrhczh26d957c0edyzermshds0k8';
-  const HOST = 'elrond.com';
-  const SIGNATURE = '4b445f287663b868e269aa0532c9fd73acb37cfd45f46e33995777e68e5ecc15d97318d9af09c4102f9b40ecf347a75e2d2e81acbcc3c72ae32fcf659c2acd0e';
-  const BLOCK_HASH = 'b3d07565293fd5684c97d2b96eb862d124fd698678f3f95b2515ed07178a27b4';
+  const ADDRESS =
+    'erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl';
+  const HOST = 'api.multiversx.com';
+  const SIGNATURE =
+    'efbe8fd1132942a628e5681535d6e1c7b53344568520cff2f504123dfb7bfc2ef551966d4cf5dcd2cabbea690bc542c7de0731d35fbafaee3c32e09475edb105';
+  const BLOCK_HASH =
+    'fbd590696859076769bbf9127e8ca1a4ee0886ac0a8b7c423935be649ca6cfb1';
   const TTL = 86400;
-  const TOKEN = `ZWxyb25kLmNvbQ.${BLOCK_HASH}.${TTL}.e30`;
-  const ACCESS_TOKEN = 'ZXJkMTNycm4zZndqZHM4cjUyNjBuNnEzcGQycWE2d3FrdWRyaGN6aDI2ZDk1N2MwZWR5emVybXNoZHMwazg.Wld4eWIyNWtMbU52YlEuYjNkMDc1NjUyOTNmZDU2ODRjOTdkMmI5NmViODYyZDEyNGZkNjk4Njc4ZjNmOTViMjUxNWVkMDcxNzhhMjdiNC44NjQwMC5lMzA.4b445f287663b868e269aa0532c9fd73acb37cfd45f46e33995777e68e5ecc15d97318d9af09c4102f9b40ecf347a75e2d2e81acbcc3c72ae32fcf659c2acd0e';
-  const BLOCK_TIMESTAMP = 1653068466;
+  const TOKEN = `YXBpLm11bHRpdmVyc3guY29t.${BLOCK_HASH}.${TTL}.e30`;
+  const ACCESS_TOKEN =
+    'ZXJkMXFuazJ2bXVxeXdmcXRkbmttYXV2cG04bHMweGgwMGs4eGV1cHVhZjZjbTZjZDRyeDg5cXF6MHBwZ2w.WVhCcExtMTFiSFJwZG1WeWMzZ3VZMjl0LmZiZDU5MDY5Njg1OTA3Njc2OWJiZjkxMjdlOGNhMWE0ZWUwODg2YWMwYThiN2M0MjM5MzViZTY0OWNhNmNmYjEuODY0MDAuZTMw.efbe8fd1132942a628e5681535d6e1c7b53344568520cff2f504123dfb7bfc2ef551966d4cf5dcd2cabbea690bc542c7de0731d35fbafaee3c32e09475edb105';
+  const BLOCK_TIMESTAMP = 1673350224;
 
   const PEM_KEY = `-----BEGIN PRIVATE KEY for erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl-----
   ODY1NmI0ZjMzYTRjOTY0MGI3MTFiY2E4NDUzODNiMDZiNjczMjAzNjk2ZjYxYjMy
   N2E5MDY3ODdlNWExODg1NjA0ZWNhNjZmODAyMzkyMDViNjc2ZGY3OGMwZWNmZjgz
   Y2Q3N2JlYzczNjc4MWU3NTNhYzZmNTg2ZDQ2NjM5NDA=
   -----END PRIVATE KEY for erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl-----`;
-  const PEM_ADDRESS = 'erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl';
+  const PEM_ADDRESS =
+    'erd1qnk2vmuqywfqtdnkmauvpm8ls0xh00k8xeupuaf6cm6cd4rx89qqz0ppgl';
 
   const onLatestBlockHashGet = function (mock: MockAdapter): RequestHandler {
-    return mock.onGet('https://api.elrond.com/blocks?size=1&fields=hash');
+    return mock.onGet('https://api.multiversx.com/blocks?size=1&fields=hash');
   };
 
-  const onLatestBlockTimestampGet = function (mock: MockAdapter): RequestHandler {
-    return mock.onGet('https://api.elrond.com/blocks?size=1&fields=timestamp');
+  const onLatestBlockTimestampGet = function (
+    mock: MockAdapter
+  ): RequestHandler {
+    return mock.onGet(
+      'https://api.multiversx.com/blocks?size=1&fields=timestamp'
+    );
   };
 
-  const onSpecificBlockTimestampGet = function (mock: MockAdapter): RequestHandler {
-    return mock.onGet(`https://api.elrond.com/blocks/${BLOCK_HASH}?extract=timestamp`);
+  const onSpecificBlockTimestampGet = function (
+    mock: MockAdapter
+  ): RequestHandler {
+    return mock.onGet(
+      `https://api.multiversx.com/blocks/${BLOCK_HASH}?extract=timestamp`
+    );
   };
 
   beforeAll(() => {

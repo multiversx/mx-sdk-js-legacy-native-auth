@@ -1,21 +1,19 @@
-import axios from "axios";
-import { UserPublicKey, UserVerifier } from "@elrondnetwork/erdjs-walletcore/out";
-import { Address, SignableMessage } from "@elrondnetwork/erdjs/out";
-import { NativeAuthHostNotAcceptedError } from "./entities/errors/native.auth.host.not.accepted.error";
-import { NativeAuthInvalidBlockHashError } from "./entities/errors/native.auth.invalid.block.hash.error";
-import { NativeAuthInvalidSignatureError } from "./entities/errors/native.auth.invalid.signature.error";
-import { NativeAuthTokenExpiredError } from "./entities/errors/native.auth.token.expired.error";
-import { NativeAuthServerConfig } from "./entities/native.auth.server.config";
-import { NativeAuthSignature } from "./native.auth.signature";
-import { NativeAuthResult as NativeAuthValidateResult } from "./entities/native.auth.validate.result";
-import { NativeAuthDecoded } from "./entities/native.auth.decoded";
+import axios from 'axios';
+import { UserPublicKey, UserVerifier } from '@multiversx/erdjs-walletcore';
+import { SignableMessage, Address } from '@multiversx/erdjs';
+import { NativeAuthHostNotAcceptedError } from './entities/errors/native.auth.host.not.accepted.error';
+import { NativeAuthInvalidBlockHashError } from './entities/errors/native.auth.invalid.block.hash.error';
+import { NativeAuthInvalidSignatureError } from './entities/errors/native.auth.invalid.signature.error';
+import { NativeAuthTokenExpiredError } from './entities/errors/native.auth.token.expired.error';
+import { NativeAuthServerConfig } from './entities/native.auth.server.config';
+import { NativeAuthSignature } from './native.auth.signature';
+import { NativeAuthResult as NativeAuthValidateResult } from './entities/native.auth.validate.result';
+import { NativeAuthDecoded } from './entities/native.auth.decoded';
 
 export class NativeAuthServer {
   config: NativeAuthServerConfig;
 
-  constructor(
-    config?: Partial<NativeAuthServerConfig>,
-  ) {
+  constructor(config?: Partial<NativeAuthServerConfig>) {
     this.config = Object.assign(new NativeAuthServerConfig(), config);
   }
 
@@ -72,6 +70,8 @@ export class NativeAuthServer {
       message: Buffer.from(signedMessage, 'utf8'),
       signature: new NativeAuthSignature(decoded.signature),
     });
+
+    console.log(`signedMessage ${signedMessage}`);
 
     const publicKey = new UserPublicKey(
       Address.fromString(decoded.address).pubkey(),
